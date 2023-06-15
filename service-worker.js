@@ -1,39 +1,44 @@
-self.addEventListener('install', event => {
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', event => {
-  self.clients.claim();
-});
-
-self.addEventListener('notificationclick', event => {
-  event.notification.close();
-});
-
-self.addEventListener('pushsubscriptionchange', event => {
+// Register the service worker
+self.addEventListener("install", (event) => {
   event.waitUntil(
-    self.registration.pushManager.subscribe({
-      userVisibleOnly: true
-    })
-    .then(subscription => {
-      // Save the subscription to your server
-      startPeriodicNotifications();
-    })
-    .catch(error => {
-      console.error('Error subscribing to push notifications:', error);
+    self.registration.showNotification("Service Worker Installed", {
+      body: "You will receive notifications at specified intervals.",
     })
   );
 });
 
-function startPeriodicNotifications() {
-  setInterval(sendNotification, 30 * 60 * 1000); // 30 minutes in milliseconds
+// Schedule notifications at specified intervals
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    self.registration.showNotification("Service Worker Activated", {
+      body: "Notifications will be sent at intervals: 1 min, 15 min, and every 30 min since then.",
+    })
+  );
+
+  // Schedule the initial notifications
+  scheduleNotification(1);
+  scheduleNotification(15);
+  scheduleNotification(30);
+
+  // Start the interval for subsequent notifications
+  setInterval(() => {
+    scheduleNotification(30);
+  }, 30 * 60 * 1000); // 30 minutes interval
+});
+
+// Schedule a notification after a specified time interval
+function scheduleNotification(minutes) {
+  const interval = minutes * 60 * 1000; // Convert minutes to milliseconds
+  const now = Date.now();
+
+  self.registration.showNotification("Notification", {
+    body: `Notification scheduled ${minutes} minute(s) after installation.`,
+    timestamp: now + interval,
+  });
 }
 
-function sendNotification() {
-  const options = {
-    body: 'This is a periodic notification from the service worker!',
-    icon: 'path/to/icon.png'
-  };
-
-  self.registration.showNotification('Hello!', options);
-}
+// Handle notification clicks
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  // You can customize the behavior when the notification is clicked.
+});
